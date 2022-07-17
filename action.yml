@@ -1,0 +1,35 @@
+name: 'Rclone Backup Action'
+description: 'GitHub Action to backup your repository to any rclone-supported cloud storage service'
+author: 'Alyetama'
+branding:
+  icon: 'upload-cloud'
+  color: 'green'
+
+inputs:
+  config:
+    description: 'Rclone configuration of one or multiple remote enteries'
+    required: true
+  remoteName: 
+    description: 'Name of the remote entry to use'
+    default: 'remote'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install and configure rclone
+      shell: bash
+      run: |
+        if ! [ -x "$(command -v rclone)" ]; then
+          sudo -v; curl https://rclone.org/install.sh | sudo bash
+        fi
+        rclone config file &>/dev/null
+        echo -e "${{ inputs.config }}" > "$(rclone config file | tail -1)"
+    - name: Compress and upload the current repository
+      shell: bash
+      run: |
+        cd ..
+        REMOTE_PATH="GITHUB_BACKUPS/${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}"
+        REMOTE_NAME="${{ inputs.remoteName }}"
+        tar -zvcf "${GITHUB_SHA}.tgz" -C "$GITHUB_WORKSPACE" .
+        rclone copy "${GITHUB_SHA}.tgz" "${REMOTE_NAME}:${REMOTE_PATH}" -P
+        echo -e "Uploaded a snapshot to:\n${REMOTE_PATH}/${GITHUB_SHA}.tgz"

@@ -1,0 +1,28 @@
+name: Tests
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    env:
+      RCLONE_REMOTE_CONFIG: "${{ secrets.RCLONE_REMOTE_CONFIG }}"
+    
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: 'Test 1: Local'
+        uses: ./
+        with:
+          config: "$RCLONE_REMOTE_CONFIG"
+          remoteName: remote
+
+      - name: 'Test 2: Remote'
+        uses: Alyetama/rclone-backup-action@main
+        with:
+          config: "$RCLONE_REMOTE_CONFIG"
+          remoteName: remote
